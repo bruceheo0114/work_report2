@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업무보고 생성기 v22</title>
+<style>
+:root{
+  --navy:#1A2744;--teal:#1F5B66;--orange:#E8704A;--bg:#F4F3EF;
+  --line:#E4E1D8;--text:#1A2744;--muted:#8B887F;--soft:#FAF9F6;
+  --green:#2E7D4F;--danger:#C0392B;--purple:#5B3F8E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.45}
+header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:50;box-shadow:0 2px 14px rgba(26,39,68,.25)}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-size:18px;font-weight:900;letter-spacing:-.5px}.logo span{color:var(--orange);margin-right:6px}
+.header-sub{font-size:12px;color:rgba(255,255,255,.62);font-weight:500;margin-top:2px}
+main{max-width:1280px;margin:0 auto;padding:18px 16px 80px}
+
+/* ── Tab nav ── */
+.tab-nav{display:flex;gap:2px;margin-bottom:18px;background:#fff;border-radius:14px;padding:6px;box-shadow:0 1px 6px rgba(26,39,68,.08);border:1px solid var(--line)}
+.tab-btn{flex:1;background:none;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab-btn.active{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(26,39,68,.25)}
+.tab-btn:hover:not(.active){background:var(--soft);color:var(--navy)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── layout ── */
+.layout{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(430px,.96fr);gap:18px;align-items:start}
+.left,.right{display:flex;flex-direction:column;gap:14px}.right{position:sticky;top:76px}
+.card{background:#fff;border-radius:16px;box-shadow:0 1px 8px rgba(26,39,68,.08);overflow:hidden;border:1px solid rgba(228,225,216,.8)}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:#fff;border-bottom:1px solid var(--line)}
+.card-title{font-size:15px;font-weight:900;letter-spacing:-.2px}.card-desc{font-size:12px;color:var(--muted);margin-top:3px}.card-body{padding:16px 18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:6px}.label{font-size:12px;color:var(--muted);font-weight:800}.hint{font-size:12px;color:var(--muted);line-height:1.55}.small{font-size:12px;color:var(--muted)}
+input,select,textarea{font-family:inherit;color:var(--text);border:1.5px solid #D5D1C7;border-radius:9px;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,39,68,.08)}
+input,select{height:38px;padding:0 10px;font-size:14px}textarea{padding:10px 12px;font-size:14px;resize:vertical;min-height:92px;width:100%;line-height:1.55}
+.btn{border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+.btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:#263A66}
+.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:#d65f3a}
+.btn-green{background:var(--green);color:#fff}.btn-light{background:#F0EEE8;color:var(--navy)}.btn-light:hover{background:#E7E3DA}
+.btn-danger{background:#FFF1EE;color:var(--danger);border:1px solid #F0B5A7}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn-purple{background:var(--purple);color:#fff}.btn-purple:hover{background:#4a3378}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:8px}.action-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.info-box{background:#EEF1F8;border-left:4px solid var(--navy);border-radius:12px;padding:12px 14px;color:var(--navy);font-size:13px;line-height:1.6}
+.info-box.purple{background:#F3EFFA;border-left-color:var(--purple);color:var(--purple)}
+.empty{background:var(--soft);border:1px dashed #D9D4C9;border-radius:12px;padding:16px;color:#9B978D;text-align:center;font-size:13px;font-weight:700}
+.project-list,.record-list,.task-list,.entry-list{display:flex;flex-direction:column;gap:10px}
+.project-row{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.project-row-top{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:end}
+.project-row-mid{display:grid;grid-template-columns:1fr 1fr 100px;gap:8px;align-items:end}
+.project-stat{font-size:12px;color:var(--muted)}.project-stat strong{color:var(--orange);font-size:14px}
+.period-grid{display:flex;flex-direction:column;gap:14px}
+.period-card{background:var(--soft);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.period-head{padding:12px 14px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.period-title{font-weight:900;font-size:14px}.period-sub{font-size:12px;color:var(--muted);margin-top:2px}.period-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+.task-card{background:#fff;border:1px solid #ECE9E1;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.task-top{display:grid;grid-template-columns:minmax(150px,1fr) 34px;gap:8px;align-items:end}
+.task-foot{display:grid;grid-template-columns:1fr 145px;gap:8px;align-items:start}.note-in{min-height:42px;height:42px;resize:vertical}.period-long-textarea{min-height:120px}
+.preview-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.preview-box{background:#fff;border-radius:12px;border:1px solid var(--line);padding:14px;overflow:auto;max-height:calc(100vh - 210px)}
+.mail-wrap{width:1080px;min-width:1080px}
+.record-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.record-title{font-weight:900}.record-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.import-box{min-height:150px;font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif}
+.import-options{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+/* ── Weekly report specific ── */
+.weekly-entry-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s}
+.weekly-entry-card:hover{border-color:#b8b4aa}
+.we-head{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:end}
+.we-proj-label{font-size:13px;font-weight:900;color:var(--navy);padding:7px 10px;background:#EEF1F8;border-radius:8px;border-left:3px solid var(--navy);min-height:32px;display:flex;align-items:center}
+
+/* Member chips */
+.chips-row{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:3px;background:#F0EEE8;color:var(--muted);border-radius:20px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .12s;user-select:none}
+.chip.selected{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip:hover:not(.selected){background:#E4E1D8;color:var(--navy)}
+.chip-add{background:transparent;border:1.5px dashed #C5C1B9;color:var(--muted);padding:4px 10px}
+.chip-add:hover{border-color:var(--navy);color:var(--navy);background:var(--soft)}
+
+/* Preset tag */
+.preset-tag{display:inline-block;background:#EEF1F8;color:var(--navy);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;margin:2px 2px;cursor:pointer;border:1.5px solid transparent;transition:all .12s}
+.preset-tag:hover{background:var(--navy);color:#fff}
+.preset-tag.removable::after{content:'×';margin-left:5px;color:#aaa;font-size:10px}
+.preset-tag.removable:hover::after{color:#fff}
+
+/* Weekly preview */
+.weekly-preview-box{background:#1A2744;border-radius:12px;padding:16px 18px;overflow:auto;max-height:calc(100vh - 210px);min-height:300px}
+.weekly-preview-text{font-family:'Malgun Gothic','맑은 고딕',monospace;font-size:13px;line-height:1.8;color:#E8F0FE;white-space:pre-wrap;word-break:break-all}
+
+/* Weekly record */
+.w-record-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+
+/* Divider */
+.section-divider{height:1px;background:var(--line);margin:12px 0}
+
+/* Manage section */
+.manage-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:12px;padding:12px 18px;font-weight:900;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s;z-index:999}.toast.show{opacity:1}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:22px 24px;min-width:320px;max-width:480px;width:90%;box-shadow:0 8px 36px rgba(0,0,0,.18)}
+.modal h3{font-size:16px;font-weight:900;margin-bottom:14px}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+@media(max-width:1060px){.layout{grid-template-columns:1fr}.right{position:static}.preview-box,.weekly-preview-box{max-height:none}}
+@media(max-width:820px){.task-foot{grid-template-columns:1fr}.project-row-mid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){main{padding:14px 10px 60px}.grid-2{grid-template-columns:1fr}.header-inner{align-items:flex-start;flex-direction:column}.project-row-mid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="logo"><span>●</span>업무보고 생성기 v22</div>
+      <div class="header-sub">메일표 + 주차별 PM 업무보고 | 프리셋 프로젝트 + 참여자 관리</div>
+    </div>
+    <div class="action-row" id="headerActions">
+      <button class="btn btn-light btn-sm" onclick="saveRecord()">💾 일일 저장</button>
+      <button class="btn btn-orange btn-sm" onclick="copyMailHtml()">📋 메일 표 복사</button>
+      <button class="btn btn-green btn-sm" onclick="exportExcelByDate()">📊 엑셀 저장</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="info-box" style="margin-bottom:14px">
+    <strong>배포형 안내</strong> 일일 저장/주차 저장/프리셋은 GitHub에 저장되지 않고 현재 PC의 브라우저에만 저장됩니다. 공용 PC에서는 사용 후 브라우저 데이터 삭제를 권장합니다.
+  </div>
+
+  <!-- Tab nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-btn-daily" onclick="switchTab('daily')">
+      📅 일일 업무보고
+    </button>
+    <button class="tab-btn" id="tab-btn-weekly" onclick="switchTab('weekly')">
+      📋 주차별 PM 업무보고
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ TAB: 일일 -->
+  <div id="tab-daily" class="tab-panel active">
+    <div class="layout">
+      <section class="left">
+        <div class="info-box">
+          <strong>작성 방식</strong> <strong>+ 추가</strong>를 누르면 업무 입력창이 생깁니다. 각 입력창에서 프로젝트를 선택하고 오전/오후 업무를 작성하면 됩니다. 프로젝트명은 프리셋에서 선택하거나 직접 입력할 수 있습니다.
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">기본 정보</div><div class="card-desc">출근시간과 근무 형태에 따라 오전/오후/퇴근 시간이 자동으로 잡힙니다.</div></div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="field"><label class="label">날짜</label><input type="date" id="dateInput" onchange="state.date=this.value;renderAll()"></div>
+              <div class="field"><label class="label">작성자</label><input id="authorInput" placeholder="예: 홍길동" oninput="state.author=this.value;renderPreview();saveState()"></div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="action-row">
+              <span class="small">출근시간</span>
+              <button class="btn btn-navy" onclick="setWorkTemplate('09:00')">9시 출근</button>
+              <button class="btn btn-navy" onclick="setWorkTemplate('09:30')">9시 30분 출근</button>
+              <button class="btn btn-navy" onclick="setWorkTemplate('10:00')">10시 출근</button>
+              <span class="hint" id="workTimeHint"></span>
+            </div>
+            <div style="height:12px"></div>
+            <div class="field">
+              <label class="label">근무 형태</label>
+              <select id="workTypeSelect" onchange="state.workType=this.value;applyWorkTypeSideEffects();renderAll()">
+                <option value="normal">정상 근무</option><option value="annual">연차</option>
+                <option value="morningHalf">오전 반차</option><option value="afternoonHalf">오후 반차</option>
+                <option value="morningQuarter">오전 반반차</option><option value="afternoonQuarter">오후 반반차</option>
+              </select>
+              <div class="hint" id="workTypeHint"></div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="action-row">
+              <span class="small">야근 종료</span>
+              <input type="time" id="otEndInput" style="width:120px" value="20:00">
+              <button class="btn btn-orange" onclick="addOvertime()">+ 야근 업무 추가</button>
+              <button class="btn btn-ghost" onclick="clearOvertime()">야근 해제</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">프로젝트와 업무시간</div><div class="card-desc">프로젝트명은 프리셋에서 선택하거나 직접 입력합니다. 오늘 일일h / 기존 월 누적h를 입력합니다.</div></div>
+            <div class="action-row">
+              <button class="btn btn-light btn-sm" onclick="openPresetModal()">⚙ 프리셋</button>
+              <button class="btn btn-navy btn-sm" onclick="addProject()">+ 프로젝트</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="projectList" class="project-list"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">기존 업무보고 가져오기</div><div class="card-desc">메일에 있는 표를 텍스트로 긁어 붙여넣으면 프로젝트/오전/오후 업무로 변환합니다.</div></div>
+          </div>
+          <div class="card-body">
+            <div class="field">
+              <label class="label">기존 메일 표 텍스트</label>
+              <textarea id="importText" class="import-box" placeholder="메일 본문 표를 드래그해서 복사한 뒤 여기에 붙여넣으세요.&#10;&#10;예:&#10;09:30~12:00(2.5h)&#10;[프로젝트명 1] 프로젝트 A&#10;- 자료 정리 및 공유 진행&#10;&#10;13:00~18:30(5.5h)&#10;[프로젝트명 2] 프로젝트 B&#10;- 실행안 수정 진행"></textarea>
+            </div>
+            <div class="import-options">
+              <button class="btn btn-navy" onclick="importReportText(false)">기존 내용에 추가 변환</button>
+              <button class="btn btn-light" onclick="importReportText(true)">현재 업무 비우고 변환</button>
+              <button class="btn btn-ghost" onclick="document.getElementById('importText').value=''">입력칸 비우기</button>
+            </div>
+            <div class="hint" style="margin-top:8px">지원 방식: 이 생성기 표 복사 텍스트, 메일 표를 드래그해 복사한 텍스트, [프로젝트명 1] 형태의 업무 블록.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">업무 기록</div><div class="card-desc">+ 추가 후 프로젝트를 선택해 입력합니다.</div></div>
+            <div class="action-row">
+              <button class="btn btn-light btn-sm" onclick="addEntry('morning')">+ 오전 업무</button>
+              <button class="btn btn-light btn-sm" onclick="addEntry('afternoon')">+ 오후 업무</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="period-grid">
+              <div class="period-card" id="morningPeriodCard">
+                <div class="period-head">
+                  <div><div class="period-title">오전 업무</div><div class="period-sub" id="morningTimeSub"></div></div>
+                  <button class="btn btn-navy btn-sm" onclick="addEntry('morning')">+ 추가</button>
+                </div>
+                <div class="period-body"><div id="morningEntryList" class="entry-list"></div></div>
+              </div>
+              <div class="period-card" id="afternoonPeriodCard">
+                <div class="period-head">
+                  <div><div class="period-title">오후 업무</div><div class="period-sub" id="afternoonTimeSub"></div></div>
+                  <button class="btn btn-navy btn-sm" onclick="addEntry('afternoon')">+ 추가</button>
+                </div>
+                <div class="period-body"><div id="afternoonEntryList" class="entry-list"></div></div>
+              </div>
+              <div class="period-card" id="overtimePeriodCard">
+                <div class="period-head">
+                  <div><div class="period-title">야근 업무</div><div class="period-sub" id="overtimeTimeSub"></div></div>
+                  <button class="btn btn-navy btn-sm" onclick="addEntry('overtime')">+ 추가</button>
+                </div>
+                <div class="period-body"><div id="overtimeEntryList" class="entry-list"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">명일 진행 업무</div><div class="card-desc">필요한 경우만 입력합니다. 비워두면 메일 표에서 제외됩니다.</div></div>
+            <button class="btn btn-light btn-sm" onclick="addTomorrow()">+ 추가</button>
+          </div>
+          <div class="card-body"><div id="tomorrowList" class="task-list"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">저장된 기록</div><div class="card-desc">개인 PC 브라우저에만 저장됩니다.</div></div>
+          </div>
+          <div class="card-body"><div id="recordList" class="record-list"></div></div>
+        </div>
+      </section>
+
+      <aside class="right">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">메일 미리보기</div><div class="card-desc">오전/오후 업무가 프로젝트별로 묶여 반영됩니다.</div></div>
+            <div class="preview-actions">
+              <button class="btn btn-light btn-sm" onclick="copyPlainText()">텍스트 복사</button>
+              <button class="btn btn-orange btn-sm" onclick="copyMailHtml()">메일 표 복사</button>
+              <button class="btn btn-green btn-sm" onclick="exportExcelByDate()">엑셀 저장</button>
+            </div>
+          </div>
+          <div class="card-body"><div id="preview" class="preview-box"></div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ TAB: 주차별 -->
+  <div id="tab-weekly" class="tab-panel">
+    <div class="layout">
+      <section class="left">
+        <div class="info-box purple">
+          <strong>주차별 PM 업무보고</strong> — 프로젝트별 참여자를 선택하고 업무 내용을 입력하면 자동으로 텍스트 형식으로 정리됩니다. 오른쪽에서 복사하여 메신저나 메일에 바로 붙여넣으세요.
+        </div>
+
+        <!-- Week picker -->
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">기준 주차 설정</div><div class="card-desc">날짜를 선택하면 해당 주(월~금)로 자동 계산됩니다.</div></div>
+            <div class="action-row">
+              <button class="btn btn-light btn-sm" onclick="saveWeeklyRecord()">💾 저장</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="field">
+                <label class="label">주차 날짜 선택</label>
+                <input type="date" id="weekDateInput" oninput="weeklyState.weekStart=this.value;saveWeeklyState();renderWeeklyPreview()">
+              </div>
+              <div class="field">
+                <label class="label">주차 범위</label>
+                <div style="height:38px;display:flex;align-items:center;font-size:13px;font-weight:700;color:var(--navy)" id="weekRangeLabel">날짜를 선택하세요</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project entries -->
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">프로젝트별 업무</div><div class="card-desc">프로젝트명을 선택/입력하고, 참여자 칩을 눌러 선택하세요.</div></div>
+            <button class="btn btn-purple btn-sm" onclick="addWeeklyEntry()">+ 프로젝트 추가</button>
+          </div>
+          <div class="card-body">
+            <div id="weeklyEntryList" style="display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+        </div>
+
+        <!-- Member management -->
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">팀원 관리</div><div class="card-desc">참여자 칩에 표시될 팀원 목록입니다. 추가/삭제 가능합니다.</div></div>
+          </div>
+          <div class="card-body">
+            <div class="manage-row" id="memberManageRow"></div>
+            <div style="height:10px"></div>
+            <div class="action-row">
+              <input id="newMemberInput" placeholder="이름 직급 (예: 홍길동 대리)" style="width:200px" onkeydown="if(event.key==='Enter')addPresetMember()">
+              <button class="btn btn-navy btn-sm" onclick="addPresetMember()">+ 팀원 추가</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly record -->
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">저장된 주차 보고</div><div class="card-desc">브라우저에만 저장됩니다.</div></div>
+          </div>
+          <div class="card-body"><div id="weeklyRecordList" style="display:flex;flex-direction:column;gap:8px"></div></div>
+        </div>
+      </section>
+
+      <aside class="right">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">주차 업무보고 미리보기</div><div class="card-desc">텍스트 형태로 정리됩니다.</div></div>
+            <button class="btn btn-purple btn-sm" onclick="copyWeeklyText()">📋 텍스트 복사</button>
+          </div>
+          <div class="card-body" style="padding:12px">
+            <div class="weekly-preview-box"><div class="weekly-preview-text" id="weeklyPreview">프로젝트를 추가하고 내용을 입력하세요.</div></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<!-- Preset modal -->
+<div class="modal-overlay" id="presetModal">
+  <div class="modal">
+    <h3>⚙ 프로젝트 프리셋 관리</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">일일 업무보고에서 프로젝트명 입력 시 자동완성 목록으로 사용됩니다.</p>
+    <div id="presetProjectManageRow" class="manage-row"></div>
+    <div style="height:10px"></div>
+    <div class="action-row">
+      <input id="newPresetInput" placeholder="프로젝트명 입력" style="flex:1" onkeydown="if(event.key==='Enter')addPresetProject()">
+      <button class="btn btn-navy btn-sm" onclick="addPresetProject()">+ 추가</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-sm" onclick="resetPresetProjects()" style="margin-right:auto">↺ 기본값 초기화</button>
+      <button class="btn btn-light" onclick="closePresetModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Datalist for project presets -->
+<datalist id="presetProjectList"></datalist>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+// ── Storage keys ──────────────────────────────────────
+const STORAGE_KEY='work-report-public-daily-v1';
+const RECORD_KEY='work-report-public-daily-records-v1';
+const PRESET_PROJ_KEY='work-report-public-projects-v1';
+const PRESET_MEMBERS_KEY='work-report-public-members-v1';
+const WEEKLY_STATE_KEY='work-report-public-weekly-v1';
+const WEEKLY_RECORDS_KEY='work-report-public-weekly-records-v1';
+
+// ── Defaults ──────────────────────────────────────────
+const DEFAULT_PRESET_PROJECTS=[
+  "프로젝트 A <언론 PR>",
+  "프로젝트 B <콘텐츠/바이럴>",
+  "프로젝트 C <제안/기획>",
+  "공통 업무",
+];
+const DEFAULT_PRESET_MEMBERS=[
+  '홍길동 차장','김민지 과장','이서준 대리','박지은 사원',
+];
+
+// ── State ─────────────────────────────────────────────
+let uid=0;
+function makeId(){uid+=1;return 'id_'+Date.now().toString(36)+'_'+uid;}
+// 로컬 날짜 문자열 반환 (toISOString은 UTC 기준이라 한국에서 하루 밀림 방지)
+function localDateStr(d){const dt=d||new Date();return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function todayStr(){return localDateStr();}
+function parseLocalDate(dateStr){if(!dateStr)return null;const[y,m,d]=dateStr.split('-').map(Number);return new Date(y,m-1,d);}
+function deepCopy(v){return JSON.parse(JSON.stringify(v));}
+function defaultState(){return{date:todayStr(),author:'',start:'09:30',normalEnd:'18:30',overtimeEnd:'',workType:'normal',projects:[],entries:{morning:[],afternoon:[],overtime:[]},tomorrow:[]};}
+function defaultWeeklyState(){return{weekStart:'',entries:[]};}
+function loadJSON(key,fb){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fb}catch(e){return fb}}
+
+let state=loadJSON(STORAGE_KEY,defaultState());
+let records=loadJSON(RECORD_KEY,[]);
+let presetProjects=loadJSON(PRESET_PROJ_KEY,DEFAULT_PRESET_PROJECTS);
+let presetMembers=loadJSON(PRESET_MEMBERS_KEY,DEFAULT_PRESET_MEMBERS);
+let weeklyState=loadJSON(WEEKLY_STATE_KEY,defaultWeeklyState());
+let weeklyRecords=loadJSON(WEEKLY_RECORDS_KEY,[]);
+
+function migrateState(){
+  state.date=todayStr(); // 매일 오늘 날짜로 자동 세팅
+  if(!state.start)state.start='09:30';
+  if(!state.normalEnd)state.normalEnd='18:30';
+  if(!state.workType)state.workType='normal';
+  if(!state.projects)state.projects=[];
+  if(!state.entries)state.entries={morning:[],afternoon:[],overtime:[]};
+  ['morning','afternoon','overtime'].forEach(p=>{if(!state.entries[p])state.entries[p]=[];});
+}
+migrateState();
+
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+function saveRecords(){localStorage.setItem(RECORD_KEY,JSON.stringify(records));}
+function savePresetProjects(){localStorage.setItem(PRESET_PROJ_KEY,JSON.stringify(presetProjects));renderDatalist();}
+function savePresetMembers(){localStorage.setItem(PRESET_MEMBERS_KEY,JSON.stringify(presetMembers));}
+function saveWeeklyState(){localStorage.setItem(WEEKLY_STATE_KEY,JSON.stringify(weeklyState));}
+function saveWeeklyRecords(){localStorage.setItem(WEEKLY_RECORDS_KEY,JSON.stringify(weeklyRecords));}
+
+// ── 한국 공휴일 (2025~2026) ────────────────────────────
+const KR_HOLIDAYS=new Set([
+  // 2025
+  '2025-01-01', // 신정
+  '2025-01-28','2025-01-29','2025-01-30', // 설날
+  '2025-03-01', // 삼일절
+  '2025-05-05','2025-05-06', // 어린이날 + 대체
+  '2025-06-06', // 현충일
+  '2025-08-15', // 광복절
+  '2025-10-03', // 개천절
+  '2025-10-05','2025-10-06','2025-10-07', // 추석
+  '2025-10-08', // 추석 대체공휴일
+  '2025-10-09', // 한글날
+  '2025-12-25', // 성탄절
+  // 2026
+  '2026-01-01', // 신정
+  '2026-02-16','2026-02-17','2026-02-18', // 설날
+  '2026-03-01', // 삼일절
+  '2026-05-05', // 어린이날
+  '2026-05-25', // 부처님오신날
+  '2026-06-06', // 현충일
+  '2026-08-15', // 광복절
+  '2026-09-24','2026-09-25','2026-09-26', // 추석
+  '2026-10-03', // 개천절
+  '2026-10-09', // 한글날
+  '2026-12-25', // 성탄절
+]);
+function isHoliday(dateStr){return KR_HOLIDAYS.has(dateStr);}
+function isWeekend(d){const w=d.getDay();return w===0||w===6;}
+// 가장 최근 금요일을 기준으로, 공휴일이면 이전 업무일로 자동 이동
+function getLastBusinessFriday(){
+  const today=new Date();
+  const base=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  const dow=base.getDay(); // 0=일 1=월 2=화 3=수 4=목 5=금 6=토
+  const daysBackToFri=[2,3,4,5,6,0,1][dow];
+  const fri=new Date(base.getFullYear(),base.getMonth(),base.getDate()-daysBackToFri);
+  for(let i=0;i<10;i++){
+    const ds=localDateStr(fri);
+    if(!isWeekend(fri)&&!isHoliday(ds))return ds;
+    fri.setDate(fri.getDate()-1);
+  }
+  return localDateStr(fri);
+}
+
+// ── Utilities ─────────────────────────────────────────
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.remove('show'),2200);}
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtH(h){h=Number(h)||0;return (Math.round(h*10)/10)+'h';}
+function dateSlash(d){return (d||'').replaceAll('-','/');}
+function monthKey(d){return (d||'').slice(0,7);}
+function timeToMin(t){if(!t)return NaN;const [h,m]=t.split(':').map(Number);return h*60+m;}
+function fmtHM(t){return t||'--:--';}
+function durationLabel(start,end){const s=timeToMin(start),e=timeToMin(end);if(isNaN(s)||isNaN(e)||e<=s)return '';const h=Math.round((e-s)/60*10)/10;return `(${fmtH(h)})`;}
+function minToTime(min){min=Math.max(0,Math.min(24*60-1,min));const h=String(Math.floor(min/60)).padStart(2,'0');const m=String(min%60).padStart(2,'0');return `${h}:${m}`;}
+
+// ── Tab switching ─────────────────────────────────────
+function switchTab(tab){
+  ['daily','weekly'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-btn-'+t).classList.toggle('active',t===tab);
+  });
+  const ha=document.getElementById('headerActions');
+  ha.style.display=tab==='daily'?'flex':'none';
+  if(tab==='weekly'){renderWeekly();}
+}
+
+// ── Week utils ────────────────────────────────────────
+// 선택한 날짜가 속한 주의 월~금 반환 (로컬 날짜 기준, 타임존 버그 방지)
+function getWeekRange(dateStr){
+  if(!dateStr)return{start:'',end:''};
+  const d=parseLocalDate(dateStr);
+  if(!d)return{start:'',end:''};
+  const dow=d.getDay(); // 0=일
+  const diff=dow===0?-6:1-dow; // 월요일까지 차이
+  const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);
+  const fri=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+4);
+  return{start:localDateStr(mon),end:localDateStr(fri)};
+}
+function formatWeekRange(dateStr){
+  if(!dateStr)return'';
+  const{start,end}=getWeekRange(dateStr);
+  if(!start)return'';
+  const s=parseLocalDate(start),e=parseLocalDate(end);
+  const days=['일','월','화','수','목','금','토'];
+  const sm=String(s.getMonth()+1).padStart(2,'0'),sd=String(s.getDate()).padStart(2,'0');
+  const em=String(e.getMonth()+1).padStart(2,'0'),ed=String(e.getDate()).padStart(2,'0');
+  return `${s.getFullYear()}. ${sm}.${sd}(${days[s.getDay()]}) ~ ${em}.${ed}(${days[e.getDay()]})`;
+}
+
+// ── Datalist ──────────────────────────────────────────
+function renderDatalist(){
+  const dl=document.getElementById('presetProjectList');
+  if(dl)dl.innerHTML=presetProjects.map(p=>`<option value="${esc(p)}">`).join('');
+}
+
+// ── Preset modal ──────────────────────────────────────
+function openPresetModal(){
+  renderPresetProjectManage();
+  document.getElementById('presetModal').classList.add('open');
+}
+function closePresetModal(){document.getElementById('presetModal').classList.remove('open');}
+function renderPresetProjectManage(){
+  const el=document.getElementById('presetProjectManageRow');
+  if(!el)return;
+  if(!presetProjects.length){el.innerHTML='<span class="small">프리셋이 없습니다.</span>';return;}
+  el.innerHTML=presetProjects.map((p,i)=>`<span class="preset-tag removable" onclick="removePresetProject(${i})" title="클릭하여 삭제">${esc(p)}</span>`).join('');
+}
+function addPresetProject(){
+  const input=document.getElementById('newPresetInput');
+  const val=(input.value||'').trim();
+  if(!val){toast('프로젝트명을 입력하세요.');return;}
+  if(presetProjects.includes(val)){toast('이미 있는 프리셋입니다.');return;}
+  presetProjects.push(val);
+  savePresetProjects();
+  renderPresetProjectManage();
+  input.value='';
+  toast('프리셋이 추가되었습니다.');
+}
+function removePresetProject(i){
+  presetProjects.splice(i,1);
+  savePresetProjects();
+  renderPresetProjectManage();
+  toast('프리셋이 삭제되었습니다.');
+}
+function resetPresetProjects(){
+  if(!confirm('프리셋을 기본값으로 초기화할까요?\n직접 추가한 항목도 삭제됩니다.'))return;
+  presetProjects=[...DEFAULT_PRESET_PROJECTS];
+  savePresetProjects();
+  renderPresetProjectManage();
+  toast('프리셋이 기본값으로 초기화되었습니다.');
+}
+
+// ── Work type helpers ─────────────────────────────────
+function workTypeLabel(type){const map={normal:'정상 근무',annual:'연차',morningHalf:'오전 반차',afternoonHalf:'오후 반차',morningQuarter:'오전 반반차',afternoonQuarter:'오후 반반차'};return map[type||'normal']||'정상 근무';}
+function isAnnual(src){return (src||state).workType==='annual';}
+function isMorningOff(src){const t=(src||state).workType;return t==='annual'||t==='morningHalf';}
+function isAfternoonOff(src){const t=(src||state).workType;return t==='annual'||t==='afternoonHalf';}
+function effectiveMorningStart(src){const s=src||state;if(s.workType==='morningQuarter')return minToTime(timeToMin(s.start)+120);return s.start;}
+function effectiveAfternoonEnd(src){const s=src||state;if(s.workType==='afternoonQuarter')return minToTime(timeToMin(s.normalEnd)-120);return s.normalEnd;}
+function effectiveWorkEnd(src){const s=src||state;if(s.workType==='afternoonHalf')return '12:00';if(s.workType==='afternoonQuarter')return effectiveAfternoonEnd(s);return s.normalEnd;}
+function workTypeDescription(src){const s=src||state;const t=s.workType||'normal';if(t==='annual')return '연차: 업무 시간표에는 연차 행만 표시됩니다.';if(t==='morningHalf')return '오전 반차: 오전 업무는 제외되고 오후 업무만 표시됩니다.';if(t==='afternoonHalf')return '오후 반차: 오전 업무만 표시되고 오후 업무는 제외됩니다.';if(t==='morningQuarter')return `오전 반반차: 오전 시작 시간이 ${effectiveMorningStart(s)}로 조정됩니다.`;if(t==='afternoonQuarter')return `오후 반반차: 오후 종료 시간이 ${effectiveAfternoonEnd(s)}로 조정됩니다.`;return '정상 근무: 오전/점심/오후 업무가 모두 표시됩니다.';}
+function applyWorkTypeSideEffects(){if(state.workType==='annual'){state.overtimeEnd='';}if(state.workType==='afternoonHalf'&&state.overtimeEnd&&timeToMin(state.overtimeEnd)<=timeToMin(effectiveWorkEnd(state))){state.overtimeEnd='';}}
+function periodVisible(period,src){const s=src||state;if(s.workType==='annual')return false;if(period==='morning')return !isMorningOff(s);if(period==='afternoon')return !isAfternoonOff(s);if(period==='overtime')return !!s.overtimeEnd&&s.workType!=='annual';return true;}
+function periodLabel(period){return period==='morning'?'오전 업무':period==='afternoon'?'오후 업무':'야근 업무';}
+function periodTimeText(period,rec){const src=rec||state;if(period==='morning')return `${fmtHM(effectiveMorningStart(src))}~12:00${durationLabel(effectiveMorningStart(src),'12:00')}`;if(period==='afternoon')return `13:00~${fmtHM(effectiveAfternoonEnd(src))}${durationLabel('13:00',effectiveAfternoonEnd(src))}`;if(period==='overtime')return `${fmtHM(effectiveWorkEnd(src))}~${fmtHM(src.overtimeEnd)}${durationLabel(effectiveWorkEnd(src),src.overtimeEnd)}`;return periodLabel(period);}
+function savedHoursForProject(projectNameValue){const m=monthKey(state.date);return records.filter(r=>monthKey(r.date)===m&&r.date!==state.date).reduce((sum,r)=>{const match=(r.projects||[]).find(p=>p.name===projectNameValue);return sum+(match?Number(match.dailyHours)||0:0);},0);}
+function projectSummary(){return state.projects.map(p=>{const daily=Number(p.daily)||0;const saved=savedHoursForProject(p.name);const base=Number(p.base)||0;return{...p,dailyHours:daily,monthHours:base+saved+daily};});}
+function totalDaily(){return projectSummary().reduce((s,p)=>s+p.dailyHours,0);}
+function totalMonth(){return projectSummary().reduce((s,p)=>s+p.monthHours,0);}
+function projectNameById(id,src){const s=src||state;return (s.projects||[]).find(p=>String(p.id)===String(id))?.name||'';}
+function projectIndexById(id,src){const s=src||state;return (s.projects||[]).findIndex(p=>String(p.id)===String(id));}
+function buildProjectLabel(index,name){return `[${name||'프로젝트 미지정'}]`;}
+
+// ── Daily render ──────────────────────────────────────
+function renderAll(){migrateState();saveState();renderBase();renderProjects();renderEntries();renderTomorrow();renderRecords();renderPreview();}
+function renderBase(){
+  document.getElementById('dateInput').value=state.date||todayStr();
+  document.getElementById('authorInput').value=state.author||'';
+  const wt=document.getElementById('workTypeSelect');if(wt)wt.value=state.workType||'normal';
+  const wth=document.getElementById('workTypeHint');if(wth)wth.textContent=workTypeDescription(state);
+  const hint=document.getElementById('workTimeHint');if(hint)hint.textContent=`현재 ${state.start} 출근 / ${state.normalEnd} 퇴근 기준`;
+  const m=document.getElementById('morningTimeSub');const a=document.getElementById('afternoonTimeSub');const o=document.getElementById('overtimeTimeSub');
+  if(m)m.textContent=periodVisible('morning')?periodTimeText('morning'):workTypeLabel(state.workType);
+  if(a)a.textContent=periodVisible('afternoon')?periodTimeText('afternoon'):workTypeLabel(state.workType);
+  if(o)o.textContent=periodVisible('overtime')?periodTimeText('overtime'):'야근 시간이 추가되면 표시됩니다';
+  const morningCard=document.getElementById('morningPeriodCard');const afternoonCard=document.getElementById('afternoonPeriodCard');const ot=document.getElementById('overtimePeriodCard');
+  if(morningCard)morningCard.style.display=periodVisible('morning')?'block':'none';
+  if(afternoonCard)afternoonCard.style.display=periodVisible('afternoon')?'block':'none';
+  if(ot)ot.style.display=periodVisible('overtime')?'block':'none';
+}
+function renderProjects(){
+  const wrap=document.getElementById('projectList');
+  if(!state.projects.length){wrap.innerHTML='<div class="empty">프로젝트를 먼저 추가하세요.</div>';return;}
+  const summary=projectSummary();
+  wrap.innerHTML=state.projects.map((p,i)=>{
+    const s=summary[i];
+    return `<div class="project-row">
+      <div class="project-row-top">
+        <div class="field">
+          <label class="label">프로젝트명</label>
+          <input list="presetProjectList" value="${esc(p.name)}" placeholder="선택하거나 직접 입력하세요"
+            oninput="state.projects[${i}].name=this.value;saveState();renderEntries();renderPreview();renderTomorrow()"
+            onblur="renderProjects()">
+        </div>
+        <button class="btn btn-danger btn-sm" style="margin-top:20px" title="삭제" onclick="removeProject(${i})">×</button>
+      </div>
+      <div class="project-row-mid">
+        <div class="field"><label class="label">오늘 일일h</label><input type="number" min="0" step="0.5" value="${esc(p.daily||0)}" oninput="state.projects[${i}].daily=parseFloat(this.value)||0;saveState();renderProjects();renderPreview()"></div>
+        <div class="field"><label class="label">기존 월 누적h</label><input type="number" min="0" step="0.5" value="${esc(p.base||0)}" oninput="state.projects[${i}].base=parseFloat(this.value)||0;saveState();renderProjects();renderPreview()"></div>
+        <div class="project-stat">월간 <strong>${fmtH(s.monthHours)}</strong><br><span style="font-size:11px">일일 직접입력</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function projectOptions(selected){
+  const opts=['<option value="">프로젝트 선택</option>'].concat(state.projects.map(p=>`<option value="${p.id}" ${String(selected)===String(p.id)?'selected':''}>${esc(p.name||'이름 없음')}</option>`));
+  return opts.join('');
+}
+function renderEntries(){renderPeriodEntries('morning','morningEntryList');renderPeriodEntries('afternoon','afternoonEntryList');renderPeriodEntries('overtime','overtimeEntryList');}
+function renderPeriodEntries(period,elementId){
+  const wrap=document.getElementById(elementId);if(!wrap)return;
+  const list=state.entries?.[period]||[];
+  if(!state.projects.length){wrap.innerHTML='<div class="empty">프로젝트를 먼저 추가하세요.</div>';return;}
+  if(!list.length){wrap.innerHTML=`<div class="empty">+ 추가를 누른 뒤 프로젝트를 선택해 ${periodLabel(period)}를 입력하세요.</div>`;return;}
+  wrap.innerHTML=list.map((entry,i)=>renderEntryCard(period,entry,i)).join('');
+}
+function renderEntryCard(period,entry,i){
+  return `<div class="task-card">
+    <div class="task-top">
+      <div class="field"><label class="label">프로젝트</label><select onchange="state.entries['${period}'][${i}].projectId=this.value;saveState();renderPreview()">${projectOptions(entry.projectId)}</select></div>
+      <button class="btn btn-danger btn-sm" onclick="removeEntry('${period}',${i})">×</button>
+    </div>
+    <div class="task-foot">
+      <div class="field"><label class="label">${periodLabel(period)} 내용</label><textarea class="period-long-textarea" placeholder="예: KOL 리스트 정리 및 광고주 공유 자료 수정 진행" oninput="state.entries['${period}'][${i}].content=this.value;saveState();renderPreview()">${esc(entry.content||'')}</textarea></div>
+      <div class="field"><label class="label">비고</label><textarea class="note-in" placeholder="선택 입력" oninput="state.entries['${period}'][${i}].note=this.value;saveState();renderPreview()">${esc(entry.note||'')}</textarea></div>
+    </div>
+  </div>`;
+}
+function renderTomorrow(){
+  const wrap=document.getElementById('tomorrowList');
+  if(!state.tomorrow.length){wrap.innerHTML='<div class="empty">명일 진행 업무가 있으면 추가하세요.</div>';return;}
+  wrap.innerHTML=state.tomorrow.map((t,i)=>`<div class="task-card" style="padding:12px">
+    <div class="task-foot">
+      <div class="field"><label class="label">명일 업무</label><textarea placeholder="예: KOL 후보 리스트 추가 검토" oninput="state.tomorrow[${i}].content=this.value;saveState();renderPreview()">${esc(t.content||'')}</textarea></div>
+      <div class="field"><label class="label">프로젝트</label><select onchange="state.tomorrow[${i}].projectId=this.value;saveState();renderPreview()">${projectOptions(t.projectId)}</select><button class="btn btn-danger btn-sm" onclick="removeTomorrow(${i})">삭제</button></div>
+    </div>
+  </div>`).join('');
+}
+function renderRecords(){
+  const wrap=document.getElementById('recordList');
+  if(!records.length){wrap.innerHTML='<div class="empty">저장된 기록이 없습니다.</div>';return;}
+  const sorted=[...records].sort((a,b)=>a.date<b.date?1:-1).slice(0,10);
+  wrap.innerHTML=sorted.map(r=>`<div class="record-item">
+    <div><div class="record-title">${esc(r.date)} ${r.author?'/ '+esc(r.author):''}</div><div class="record-sub">프로젝트 ${r.projects?.length||0}개 · 업무 ${countEntryCells(r)}건 · ${fmtH((r.projects||[]).reduce((s,p)=>s+(Number(p.dailyHours)||0),0))}</div></div>
+    <div class="action-row"><button class="btn btn-light btn-sm" onclick="loadRecord('${esc(r.date)}')">불러오기</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('${esc(r.date)}')">삭제</button></div>
+  </div>`).join('');
+}
+function countEntryCells(rec){return ['morning','afternoon','overtime'].reduce((n,p)=>n+((rec.entries?.[p]||[]).filter(e=>String(e.content||'').trim()).length),0);}
+
+// ── Daily actions ─────────────────────────────────────
+function setWorkTemplate(start){const endMap={'09:00':'18:00','09:30':'18:30','10:00':'19:00'};state.start=start;state.normalEnd=endMap[start]||'18:30';if(state.overtimeEnd&&timeToMin(state.overtimeEnd)<=timeToMin(effectiveWorkEnd(state)))state.overtimeEnd='';renderAll();toast(`${start} 출근 / ${state.normalEnd} 퇴근 기준으로 세팅되었습니다.`);}
+function addOvertime(){const v=document.getElementById('otEndInput')?.value||'20:00';if(state.workType==='annual'){toast('연차일에는 야근 업무를 추가할 수 없습니다.');return;}if(timeToMin(v)<=timeToMin(effectiveWorkEnd(state))){toast('야근 종료시간은 퇴근시간보다 늦어야 합니다.');return;}state.overtimeEnd=v;if(!state.entries.overtime.length)addEntry('overtime');else renderAll();toast(`${effectiveWorkEnd(state)}~${v} 야근 업무가 추가되었습니다.`);}
+function clearOvertime(){state.overtimeEnd='';state.entries.overtime=[];renderAll();toast('야근 업무가 해제되었습니다.');}
+function addProject(){const id=makeId();state.projects.push({id,name:'',daily:0,base:0});renderAll();}
+function removeProject(i){const id=state.projects[i].id;state.projects.splice(i,1);['morning','afternoon','overtime'].forEach(period=>{state.entries[period].forEach(e=>{if(e.projectId===id)e.projectId=''});});state.tomorrow.forEach(t=>{if(t.projectId===id)t.projectId=''});renderAll();}
+function addEntry(period){if(!periodVisible(period)){toast(`${periodLabel(period)}를 입력할 수 없는 근무 형태입니다.`);return;}if(!state.projects.length){toast('프로젝트를 먼저 추가하세요.');return;}state.entries[period].push({id:makeId(),projectId:state.projects[0]?.id||'',content:'',note:''});renderAll();}
+function removeEntry(period,i){state.entries[period].splice(i,1);renderAll();}
+function addTomorrow(){state.tomorrow.push({id:makeId(),projectId:state.projects[0]?.id||'',content:''});renderAll();}
+function removeTomorrow(i){state.tomorrow.splice(i,1);renderAll();}
+
+// ── Group/build helpers ───────────────────────────────
+function groupedEntries(period,src){const s=src||state;const grouped=[];(s.entries?.[period]||[]).forEach(e=>{if(!String(e.content||'').trim()&&!String(e.note||'').trim()&&!e.projectId)return;const key=String(e.projectId||'__none__');const idx=projectIndexById(e.projectId,s);const name=projectNameById(e.projectId,s);let g=grouped.find(x=>x.key===key);if(!g){g={key,index:idx,name,items:[],notes:[]};grouped.push(g);}if(String(e.content||'').trim())g.items.push(String(e.content).trim());if(String(e.note||'').trim())g.notes.push(String(e.note).trim());});return grouped;}
+function buildPeriodContentHtml(period){const groups=groupedEntries(period,state).filter(g=>g.items.length);if(!groups.length)return `<div style="color:#888;">${periodLabel(period)}를 추가하면 이곳에 자동 반영됩니다.</div>`;return groups.map((g,idx)=>`<div style="${idx>0?'margin-top:16px;':''}"><div style="font-weight:700;">${esc(buildProjectLabel(g.index,g.name))}</div>${g.items.map(item=>`<div style="margin-top:3px;">- ${esc(item).replace(/\n/g,'<br>- ')}</div>`).join('')}</div>`).join('');}
+function buildPeriodRemarkHtml(period){const notes=groupedEntries(period,state).flatMap(g=>g.notes.map(n=>`${g.name||'프로젝트'}: ${n}`));return notes.length?esc(notes.join('\n')).replace(/\n/g,'<br>'):'&nbsp;';}
+function groupTomorrow(items,src){const s=src||state;const grouped=[];(items||[]).forEach(t=>{if(!String(t.content||'').trim())return;const idx=projectIndexById(t.projectId,s);const name=projectNameById(t.projectId,s);const key=String(t.projectId||'__none__');let g=grouped.find(x=>x.key===key);if(!g){g={key,index:idx,name,items:[]};grouped.push(g);}g.items.push(String(t.content).trim());});return grouped;}
+function buildTomorrowContentHtml(items){const grouped=groupTomorrow(items,state);return grouped.map((g,idx)=>`<div style="${idx>0?'margin-top:16px;':''}"><div style="font-weight:700;">${esc(buildProjectLabel(g.index,g.name))}</div>${g.items.map(item=>`<div style="margin-top:3px;">- ${esc(item)}</div>`).join('')}</div>`).join('');}
+function buildTomorrowContentText(items,src){const grouped=groupTomorrow(items,src||state);return grouped.map(g=>`${buildProjectLabel(g.index,g.name)}\n${g.items.map(item=>`- ${item}`).join('\n')}`).join('\n\n');}
+
+function buildPreviewHtml(){
+  const ps=projectSummary();
+  const tomorrowRows=state.tomorrow.filter(t=>String(t.content||'').trim());
+  const border='#CCCCCC';const headBg='#1F5B66';
+  const reportWidth='1080px';
+  let html=`<div class="mail-wrap" id="mailContent" style="font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;color:#111;font-size:13px;line-height:1.5;width:${reportWidth};min-width:${reportWidth};">`;
+  html+=`<div style="font-weight:700;margin-bottom:10px;">[${dateSlash(state.date)}] 일일 업무보고${state.author?' - '+esc(state.author):''}</div>`;
+  html+=`<table style="border-collapse:collapse;width:${reportWidth};min-width:${reportWidth};table-layout:fixed;margin-bottom:14px;">`;
+  html+=`<tr><th style="border:1px solid ${border};background:${headBg};color:#fff;width:70px;padding:8px 6px;"></th>${ps.length?ps.map(p=>`<th style="border:1px solid ${border};background:${headBg};color:#fff;padding:8px 6px;font-weight:700;">${esc(p.name||'프로젝트')}</th>`).join(''):`<th style="border:1px solid ${border};background:${headBg};color:#fff;padding:8px 6px;font-weight:700;">프로젝트</th>`}<th style="border:1px solid ${border};background:${headBg};color:#fff;width:80px;padding:8px 6px;font-weight:700;">합 계</th></tr>`;
+  if(ps.length){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">일일</td>${ps.map(p=>`<td style="border:1px solid ${border};text-align:center;padding:7px 6px;">${fmtH(p.dailyHours)}</td>`).join('')}<td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">${fmtH(totalDaily())}</td></tr>`;html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">월간</td>${ps.map(p=>`<td style="border:1px solid ${border};text-align:center;padding:7px 6px;">${fmtH(p.monthHours)}</td>`).join('')}<td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">${fmtH(totalMonth())}</td></tr>`;}else{html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">일일</td><td style="border:1px solid ${border};text-align:center;padding:7px 6px;">-</td><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">0h</td></tr>`;html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">월간</td><td style="border:1px solid ${border};text-align:center;padding:7px 6px;">-</td><td style="border:1px solid ${border};text-align:center;padding:7px 6px;font-weight:700;">0h</td></tr>`;}
+  html+=`</table>`;
+  html+=`<table style="border-collapse:collapse;width:${reportWidth};min-width:${reportWidth};table-layout:fixed;">`;
+  html+=`<tr><th style="border:1px solid ${border};width:145px;padding:7px 6px;text-align:center;background:#fff;font-weight:700;">시간</th><th style="border:1px solid ${border};padding:7px 6px;text-align:center;background:#fff;font-weight:700;">업무 내용</th><th style="border:1px solid ${border};width:95px;padding:7px 6px;text-align:center;background:#fff;font-weight:700;">비고</th></tr>`;
+  if(isAnnual(state)){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">연차</td><td style="border:1px solid ${border};padding:10px 10px;vertical-align:top;text-align:center;font-weight:700;">연차</td><td style="border:1px solid ${border};padding:10px 8px;">&nbsp;</td></tr>`;}
+  else{
+    if(periodVisible('morning')){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">${esc(periodTimeText('morning'))}</td><td style="border:1px solid ${border};padding:10px 10px;vertical-align:top;">${buildPeriodContentHtml('morning')}</td><td style="border:1px solid ${border};padding:10px 8px;vertical-align:top;">${buildPeriodRemarkHtml('morning')}</td></tr>`;}
+    else if(state.workType==='morningHalf'){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">오전 반차</td><td colspan="2" style="border:1px solid ${border};padding:10px;text-align:center;font-weight:700;">오전 반차</td></tr>`;}
+    if(periodVisible('morning')&&periodVisible('afternoon')){html+=`<tr><td colspan="3" style="border:1px solid ${border};text-align:center;padding:7px 6px;background:#f7f7f7;font-weight:700;">점심 시간</td></tr>`;}
+    if(periodVisible('afternoon')){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">${esc(periodTimeText('afternoon'))}</td><td style="border:1px solid ${border};padding:10px 10px;vertical-align:top;">${buildPeriodContentHtml('afternoon')}</td><td style="border:1px solid ${border};padding:10px 8px;vertical-align:top;">${buildPeriodRemarkHtml('afternoon')}</td></tr>`;}
+    else if(state.workType==='afternoonHalf'){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">오후 반차</td><td colspan="2" style="border:1px solid ${border};padding:10px;text-align:center;font-weight:700;">오후 반차</td></tr>`;}
+    if(periodVisible('overtime')){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">${esc(periodTimeText('overtime'))}</td><td style="border:1px solid ${border};padding:10px 10px;vertical-align:top;">${buildPeriodContentHtml('overtime')}</td><td style="border:1px solid ${border};padding:10px 8px;vertical-align:top;">${buildPeriodRemarkHtml('overtime')}</td></tr>`;}
+  }
+  if(tomorrowRows.length){html+=`<tr><td style="border:1px solid ${border};text-align:center;padding:10px 6px;font-weight:700;vertical-align:middle;">명일 진행 업무</td><td style="border:1px solid ${border};padding:10px 10px;vertical-align:top;">${buildTomorrowContentHtml(tomorrowRows)}</td><td style="border:1px solid ${border};padding:10px 8px;">&nbsp;</td></tr>`;}
+  html+=`</table></div>`;
+  return html;
+}
+function buildPeriodContentText(period,src){const groups=groupedEntries(period,src||state).filter(g=>g.items.length);if(!groups.length)return `${periodLabel(period)}를 추가하면 이곳에 자동 반영됩니다.`;return groups.map(g=>`${buildProjectLabel(g.index,g.name)}\n${g.items.map(x=>`- ${x}`).join('\n')}`).join('\n\n');}
+function buildPeriodRemarkText(period,src){return groupedEntries(period,src||state).flatMap(g=>g.notes.map(n=>`${g.name||'프로젝트'}: ${n}`)).join(' / ');}
+function buildPlainText(){
+  const ps=projectSummary();const lines=[];
+  lines.push(`[${dateSlash(state.date)}] 일일 업무보고${state.author?' - '+state.author:''}`);lines.push('');
+  lines.push(['구분',...(ps.length?ps.map(p=>p.name||'프로젝트'):['프로젝트']),'합 계'].join('\t'));
+  if(ps.length){lines.push(['일일',...ps.map(p=>fmtH(p.dailyHours)),fmtH(totalDaily())].join('\t'));lines.push(['월간',...ps.map(p=>fmtH(p.monthHours)),fmtH(totalMonth())].join('\t'));}
+  else{lines.push(['일일','-','0h'].join('\t'));lines.push(['월간','-','0h'].join('\t'));}
+  lines.push('');lines.push('시간\t업무 내용\t비고');
+  if(isAnnual(state)){lines.push(['연차','연차',''].join('\t'));}
+  else{
+    if(periodVisible('morning'))lines.push([periodTimeText('morning'),buildPeriodContentText('morning'),buildPeriodRemarkText('morning')].join('\t'));
+    else if(state.workType==='morningHalf')lines.push(['오전 반차','오전 반차',''].join('\t'));
+    if(periodVisible('morning')&&periodVisible('afternoon'))lines.push('점심 시간');
+    if(periodVisible('afternoon'))lines.push([periodTimeText('afternoon'),buildPeriodContentText('afternoon'),buildPeriodRemarkText('afternoon')].join('\t'));
+    else if(state.workType==='afternoonHalf')lines.push(['오후 반차','오후 반차',''].join('\t'));
+    if(periodVisible('overtime'))lines.push([periodTimeText('overtime'),buildPeriodContentText('overtime'),buildPeriodRemarkText('overtime')].join('\t'));
+  }
+  const tm=state.tomorrow.filter(t=>String(t.content||'').trim());
+  if(tm.length)lines.push(['명일 진행 업무',buildTomorrowContentText(tm),''].join('\t'));
+  return lines.join('\n');
+}
+function renderPreview(){document.getElementById('preview').innerHTML=buildPreviewHtml();saveState();}
+
+// ── Import logic ──────────────────────────────────────
+function parseHoursCell(v){const m=String(v||'').match(/([\d.]+)\s*h/i);return m?parseFloat(m[1]):0;}
+function ensureProjectByName(name){name=String(name||'가져온 업무').trim()||'가져온 업무';let existing=state.projects.find(p=>String(p.name||'').trim()===name);if(existing)return existing.id;const id=makeId();state.projects.push({id,name,daily:0,base:0});return id;}
+function detectPeriodFromLine(line){const t=line.replace(/\s+/g,' ');if(/명일|내일/.test(t))return 'tomorrow';if(/점심/.test(t))return null;if(/야근/.test(t))return 'overtime';if(/오전\s*업무/.test(t))return 'morning';if(/오후\s*업무/.test(t))return 'afternoon';const m=t.match(/(\d{1,2}):(\d{2})\s*[~-]\s*(\d{1,2}):(\d{2})/);if(m){const start=Number(m[1])*60+Number(m[2]);if(start<12*60)return 'morning';if(state.normalEnd&&start>=timeToMin(state.normalEnd))return 'overtime';if(start>=13*60)return 'afternoon';}return undefined;}
+function stripTimePrefix(line){return String(line||'').replace(/^\s*\d{1,2}:\d{2}\s*[~-]\s*\d{1,2}:\d{2}\s*(\([\d.]+h\))?\s*/,'').trim();}
+function cleanImportedLine(line){return String(line||'').replace(/\u00A0/g,' ').replace(/\r/g,'').replace(/^[|ㅣ]+|[|ㅣ]+$/g,'').trim();}
+function tryParseHeaderTable(lines){const tabLines=lines.filter(l=>l.includes('\t'));let headerIdx=tabLines.findIndex(l=>/구분/.test(l)&&/합\s*계|합계/.test(l));if(headerIdx<0)return{};const header=tabLines[headerIdx].split(/\t+/).map(x=>x.trim()).filter(Boolean);const names=header.filter(x=>!/(구분|합\s*계|합계)/.test(x));const dailyLine=tabLines.find(l=>/^일일\b/.test(l.trim()));const monthLine=tabLines.find(l=>/^월간\b/.test(l.trim()));const daily=dailyLine?dailyLine.split(/\t+/).map(x=>x.trim()).filter(Boolean).slice(1):[];const month=monthLine?monthLine.split(/\t+/).map(x=>x.trim()).filter(Boolean).slice(1):[];const indexMap={};names.forEach((name,i)=>{if(!name||/^프로젝트$/.test(name))return;const id=ensureProjectByName(name);const p=state.projects.find(p=>p.id===id);if(p){const d=parseHoursCell(daily[i]);if(d)p.daily=d;const m=parseHoursCell(month[i]);if(m){p.base=Math.max(0,m-(Number(p.daily)||0));}}indexMap[String(i+1)]={id,name};});return indexMap;}
+function appendImportedEntry(period,projectId,content){content=String(content||'').trim();if(!content)return;if(period==='tomorrow'){state.tomorrow.push({id:makeId(),projectId,content:content.replace(/^-+\s*/,'')});return;}if(!state.entries[period])state.entries[period]=[];state.entries[period].push({id:makeId(),projectId,content:content.replace(/^-+\s*/,''),note:''});}
+function parseReportText(raw,clearExisting){migrateState();const original=String(raw||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');if(!original.trim())return{added:0,projects:0};if(clearExisting){state.projects=[];state.entries={morning:[],afternoon:[],overtime:[]};state.tomorrow=[];}
+  const lines=original.replace(/\t/g,'\t').split('\n').map(cleanImportedLine).filter(Boolean);
+  const dateMatch=original.match(/\[(\d{4})[./-](\d{1,2})[./-](\d{1,2})\]|\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b/);
+  if(dateMatch){const y=dateMatch[1]||dateMatch[4],mo=dateMatch[2]||dateMatch[5],d=dateMatch[3]||dateMatch[6];state.date=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+  if(/연차/.test(original))state.workType='annual';else if(/오전\s*반차/.test(original))state.workType='morningHalf';else if(/오후\s*반차/.test(original))state.workType='afternoonHalf';else if(/오전\s*반반차/.test(original))state.workType='morningQuarter';else if(/오후\s*반반차/.test(original))state.workType='afternoonQuarter';
+  const indexMap=tryParseHeaderTable(lines);let currentPeriod='morning';let currentProjectId=state.projects[0]?.id||ensureProjectByName('가져온 업무');let currentBuffer=[];let added=0;
+  const flush=()=>{if(currentBuffer.length){appendImportedEntry(currentPeriod,currentProjectId,currentBuffer.join('\n'));added+=1;currentBuffer=[];}};
+  const projectLabelRegex=/\[?\s*프로젝트명\s*(\d+)\s*\]?\s*[:：]?\s*(.*)$/;
+  lines.forEach((rawLine)=>{let line=rawLine;const cells=line.includes('\t')?line.split(/\t+/).map(cleanImportedLine).filter(Boolean):[line];cells.forEach((cell)=>{let l=cell;if(!l)return;if(/^(구분|일일|월간|합\s*계|합계|시간|업무\s*내용|비고)$/.test(l))return;if(/^\d+(\.\d+)?h$/.test(l))return;if(/^(0|-)$/.test(l))return;const pDetected=detectPeriodFromLine(l);if(pDetected!==undefined){flush();if(pDetected===null)return;currentPeriod=pDetected;l=stripTimePrefix(l).replace(/^오전\s*업무\s*/,'').replace(/^오후\s*업무\s*/,'').replace(/^야근\s*업무\s*/,'').replace(/^명일\s*진행\s*업무\s*/,'').trim();if(!l)return;}if(/점심/.test(l)){flush();return;}const pm=l.match(projectLabelRegex);if(pm){flush();const idx=pm[1];const nameFromLabel=(pm[2]||'').trim();if(indexMap[idx])currentProjectId=indexMap[idx].id;else currentProjectId=ensureProjectByName(nameFromLabel||`프로젝트명 ${idx}`);if(nameFromLabel){const p=state.projects.find(p=>p.id===currentProjectId);if(p&&/^프로젝트명\s*\d+$/.test(p.name))p.name=nameFromLabel;}return;}const pm2=l.match(/^프로젝트명\s*(\d+)\s+(.+)$/);if(pm2){flush();const idx=pm2[1],name=pm2[2].trim();if(indexMap[idx])currentProjectId=indexMap[idx].id;else currentProjectId=ensureProjectByName(name);return;}if(currentPeriod==='tomorrow'||currentPeriod==='morning'||currentPeriod==='afternoon'||currentPeriod==='overtime'){currentBuffer.push(l.replace(/^[-•]\s*/,'- '));}});});flush();
+  state.projects=state.projects.filter(p=>{if(p.name!=='가져온 업무')return true;const used=['morning','afternoon','overtime'].some(period=>(state.entries[period]||[]).some(e=>e.projectId===p.id))||state.tomorrow.some(t=>t.projectId===p.id);return used;});
+  return{added,projects:state.projects.length};}
+function importReportText(clearExisting){const box=document.getElementById('importText');const raw=box?.value||'';const result=parseReportText(raw,clearExisting);renderAll();toast(`변환 완료: 업무 ${result.added}건 / 프로젝트 ${result.projects}개`);}
+
+// ── Daily record ──────────────────────────────────────
+function saveRecord(){const summary=projectSummary().map(p=>({id:p.id,name:p.name,base:p.base,dailyHours:p.dailyHours,monthHours:p.monthHours}));const rec={date:state.date,author:state.author,start:state.start,normalEnd:state.normalEnd,overtimeEnd:state.overtimeEnd,workType:state.workType,projects:summary,entries:deepCopy(state.entries),tomorrow:deepCopy(state.tomorrow),savedAt:new Date().toISOString()};const idx=records.findIndex(r=>r.date===state.date);if(idx>=0)records[idx]=rec;else records.push(rec);saveRecords();renderRecords();renderProjects();renderPreview();toast('오늘 기록이 저장되었습니다.');}
+function loadRecord(date){const r=records.find(r=>r.date===date);if(!r)return;const projects=(r.projects||[]).map(p=>({id:p.id||makeId(),name:p.name||'',daily:Number(p.dailyHours)||0,base:Number(p.base)||0}));state={date:r.date||todayStr(),author:r.author||'',start:r.start||'09:30',normalEnd:r.normalEnd||'18:30',overtimeEnd:r.overtimeEnd||'',workType:r.workType||'normal',projects,entries:deepCopy(r.entries||{morning:[],afternoon:[],overtime:[]}),tomorrow:deepCopy(r.tomorrow||[])};renderAll();toast('기록을 불러왔습니다.');}
+function deleteRecord(date){if(!confirm(`${date} 기록을 삭제할까요?`))return;records=records.filter(r=>r.date!==date);saveRecords();renderRecords();renderProjects();renderPreview();toast('기록이 삭제되었습니다.');}
+
+// ── Excel export ──────────────────────────────────────
+function buildCurrentRecordForExport(){const summary=projectSummary().map(p=>({id:p.id,name:p.name,base:p.base,dailyHours:p.dailyHours,monthHours:p.monthHours}));return{date:state.date,author:state.author,start:state.start,normalEnd:state.normalEnd,overtimeEnd:state.overtimeEnd,workType:state.workType,projects:summary,entries:deepCopy(state.entries),tomorrow:deepCopy(state.tomorrow),savedAt:new Date().toISOString()};}
+function normalizeExportRecord(r){const projects=(r.projects||[]).map((p,idx)=>({id:p.id||('project_'+idx),name:p.name||'프로젝트',base:Number(p.base)||0,dailyHours:Number(p.dailyHours)||0,monthHours:Number(p.monthHours)||((Number(p.base)||0)+(Number(p.dailyHours)||0))}));return{date:r.date||todayStr(),author:r.author||'',start:r.start||'09:30',normalEnd:r.normalEnd||'18:30',overtimeEnd:r.overtimeEnd||'',workType:r.workType||'normal',projects,entries:deepCopy(r.entries||{morning:[],afternoon:[],overtime:[]}),tomorrow:deepCopy(r.tomorrow||[]),savedAt:r.savedAt||''};}
+function safeSheetName(name,used){let base=String(name||'Sheet').replace(/[\\/?*\[\]:]/g,'-').slice(0,31)||'Sheet';let candidate=base,n=2;while(used.has(candidate)){const suffix='_'+n;candidate=base.slice(0,31-suffix.length)+suffix;n+=1;}used.add(candidate);return candidate;}
+function exportRecordsForWorkbook(){const map=new Map();(records||[]).forEach(r=>{if(r&&r.date)map.set(r.date,normalizeExportRecord(r));});const current=normalizeExportRecord(buildCurrentRecordForExport());if(current.date)map.set(current.date,current);return Array.from(map.values()).sort((a,b)=>a.date>b.date?1:-1);}
+function makeExcelRow(maxCols,values){const row=Array(maxCols).fill('');values.forEach((v,i)=>{if(i<maxCols)row[i]=v;});return row;}
+function addReportRow(rows,merges,maxCols,time,content,note){const row=Array(maxCols).fill('');row[0]=time;row[1]=content;row[maxCols-1]=note||'';const r=rows.length;rows.push(row);if(maxCols>3)merges.push({s:{r,c:1},e:{r,c:maxCols-2}});}
+function addMergedAllRow(rows,merges,maxCols,text){const r=rows.length;const row=Array(maxCols).fill('');row[0]=text;rows.push(row);merges.push({s:{r,c:0},e:{r,c:maxCols-1}});}
+function buildExcelSheetData(rec){const ps=rec.projects||[];const totalD=ps.reduce((s,p)=>s+(Number(p.dailyHours)||0),0);const totalM=ps.reduce((s,p)=>s+(Number(p.monthHours)||0),0);const maxCols=Math.max(ps.length+2,3);const rows=[],merges=[];rows.push(makeExcelRow(maxCols,[`[${dateSlash(rec.date)}] 일일 업무보고${rec.author?' - '+rec.author:''}`]));merges.push({s:{r:0,c:0},e:{r:0,c:maxCols-1}});rows.push(makeExcelRow(maxCols,[]));rows.push(makeExcelRow(maxCols,['', ...(ps.length?ps.map(p=>p.name||'프로젝트'):['프로젝트']), '합 계']));rows.push(makeExcelRow(maxCols,['일일', ...(ps.length?ps.map(p=>fmtH(p.dailyHours)):['-']), fmtH(totalD)]));rows.push(makeExcelRow(maxCols,['월간', ...(ps.length?ps.map(p=>fmtH(p.monthHours)):['-']), fmtH(totalM)]));rows.push(makeExcelRow(maxCols,[]));const headerRow=Array(maxCols).fill('');headerRow[0]='시간';headerRow[1]='업무 내용';headerRow[maxCols-1]='비고';const reportHeaderRow=rows.length;rows.push(headerRow);if(maxCols>3)merges.push({s:{r:reportHeaderRow,c:1},e:{r:reportHeaderRow,c:maxCols-2}});if(isAnnual(rec)){addReportRow(rows,merges,maxCols,'연차','연차','');}else{if(periodVisible('morning',rec))addReportRow(rows,merges,maxCols,periodTimeText('morning',rec),buildPeriodContentText('morning',rec),buildPeriodRemarkText('morning',rec));else if(rec.workType==='morningHalf')addReportRow(rows,merges,maxCols,'오전 반차','오전 반차','');if(periodVisible('morning',rec)&&periodVisible('afternoon',rec))addMergedAllRow(rows,merges,maxCols,'점심 시간');if(periodVisible('afternoon',rec))addReportRow(rows,merges,maxCols,periodTimeText('afternoon',rec),buildPeriodContentText('afternoon',rec),buildPeriodRemarkText('afternoon',rec));else if(rec.workType==='afternoonHalf')addReportRow(rows,merges,maxCols,'오후 반차','오후 반차','');if(periodVisible('overtime',rec))addReportRow(rows,merges,maxCols,periodTimeText('overtime',rec),buildPeriodContentText('overtime',rec),buildPeriodRemarkText('overtime',rec));}const tm=(rec.tomorrow||[]).filter(t=>String(t.content||'').trim());if(tm.length)addReportRow(rows,merges,maxCols,'명일 진행 업무',buildTomorrowContentText(tm,rec),'');return{rows,merges,maxCols,reportHeaderRow};}
+function cellRef(r,c){return XLSX.utils.encode_cell({r,c});}
+function ensureCell(ws,r,c){const ref=cellRef(r,c);if(!ws[ref])ws[ref]={t:'s',v:''};return ws[ref];}
+function lineCount(v){return String(v||'').split(/\n/).length;}
+function applyBasicSheetLayout(ws,data){const{rows,maxCols,reportHeaderRow}=data;ws['!merges']=data.merges;const cols=[];for(let c=0;c<maxCols;c++){if(c===0)cols.push({wch:22});else if(c===maxCols-1)cols.push({wch:18});else if(maxCols===3)cols.push({wch:110});else cols.push({wch:35});}ws['!cols']=cols;ws['!rows']=rows.map((row,r)=>{if(r===0)return{hpt:24};if(r===1||r===5)return{hpt:8};if(r>=reportHeaderRow+1){const content=String(row[1]||'');if(row[0]==='점심 시간')return{hpt:22};return{hpt:Math.min(130,Math.max(28,18*(lineCount(content)+1)))};}return{hpt:24};});const borderColor='333333';const border={top:{style:'thin',color:{rgb:borderColor}},bottom:{style:'thin',color:{rgb:borderColor}},left:{style:'thin',color:{rgb:borderColor}},right:{style:'thin',color:{rgb:borderColor}}};const center={horizontal:'center',vertical:'center',wrapText:true};const topHeaderStyle={fill:{fgColor:{rgb:'1F5B66'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:center,border};const bodyCenter={alignment:center,border,font:{color:{rgb:'111111'}}};const bodyText={alignment:{vertical:'top',wrapText:true},border,font:{color:{rgb:'111111'}}};const boldCenter={alignment:center,border,font:{bold:true,color:{rgb:'111111'}}};const reportHeader={alignment:center,border,font:{bold:true,color:{rgb:'111111'}},fill:{fgColor:{rgb:'FFFFFF'}}};const lunchStyle={alignment:center,border,font:{bold:true,color:{rgb:'111111'}},fill:{fgColor:{rgb:'F7F7F7'}}};const titleStyle={font:{bold:true,sz:12,color:{rgb:'111111'}},alignment:{horizontal:'left',vertical:'center'}};ensureCell(ws,0,0).s=titleStyle;for(let r=2;r<=4;r++){for(let c=0;c<maxCols;c++){const cell=ensureCell(ws,r,c);if(r===2)cell.s=topHeaderStyle;else if(c===0||c===maxCols-1)cell.s=boldCenter;else cell.s=bodyCenter;}}for(let c=0;c<maxCols;c++)ensureCell(ws,reportHeaderRow,c).s=reportHeader;for(let r=reportHeaderRow+1;r<rows.length;r++){const isLunch=String(rows[r][0]||'')==='점심 시간';for(let c=0;c<maxCols;c++){const cell=ensureCell(ws,r,c);if(isLunch)cell.s=lunchStyle;else if(c===0||c===maxCols-1)cell.s=boldCenter;else cell.s=bodyText;}}ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length-1,c:maxCols-1}});}
+function exportExcelByDate(){if(typeof XLSX==='undefined'){toast('엑셀 저장 기능을 불러오지 못했습니다.');return;}const exportRecords=exportRecordsForWorkbook();if(!exportRecords.length){toast('엑셀로 저장할 기록이 없습니다.');return;}const wb=XLSX.utils.book_new(),used=new Set();exportRecords.forEach(rec=>{const data=buildExcelSheetData(rec);const ws=XLSX.utils.aoa_to_sheet(data.rows);applyBasicSheetLayout(ws,data);XLSX.utils.book_append_sheet(wb,ws,safeSheetName((rec.date||todayStr()).replaceAll('-','.'),used));});const first=exportRecords[0]?.date||state.date||todayStr(),last=exportRecords[exportRecords.length-1]?.date||first;XLSX.writeFile(wb,first===last?`업무보고_${first}.xlsx`:`업무보고_${first}_${last}.xlsx`);toast(`엑셀 저장 완료: ${exportRecords.length}개 일자 시트`);}
+async function copyMailHtml(){const html=buildPreviewHtml(),text=buildPlainText();try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);toast('메일 표가 복사되었습니다.');return;}}catch(e){}try{copyHtmlBySelection(html);toast('메일 표가 복사되었습니다.');return;}catch(e){}fallbackCopy(text);toast('표 서식 복사가 제한되어 텍스트로 복사했습니다.');}
+function copyHtmlBySelection(html){const temp=document.createElement('div');temp.style.position='fixed';temp.style.left='-9999px';temp.style.top='0';temp.style.width='900px';temp.style.background='#fff';temp.contentEditable='true';temp.innerHTML=html;document.body.appendChild(temp);const range=document.createRange();range.selectNodeContents(temp);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);const ok=document.execCommand('copy');selection.removeAllRanges();temp.remove();if(!ok)throw new Error('execCommand copy failed');}
+async function copyPlainText(){try{await navigator.clipboard.writeText(buildPlainText());toast('텍스트가 복사되었습니다.')}catch(e){fallbackCopy(buildPlainText());toast('텍스트가 복사되었습니다.')}}
+function fallbackCopy(text){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+
+// ══════════════════════════════════════════════════════
+// ── Weekly PM report ──────────────────────────────────
+// ══════════════════════════════════════════════════════
+function addWeeklyEntry(){
+  weeklyState.entries.push({id:makeId(),project:'',participants:[],tasks:''});
+  saveWeeklyState();
+  renderWeekly();
+  renderWeeklyPreview();
+}
+function removeWeeklyEntry(id){
+  weeklyState.entries=weeklyState.entries.filter(e=>e.id!==id);
+  saveWeeklyState();
+  renderWeekly();
+  renderWeeklyPreview();
+}
+function updateWeeklyEntry(id,field,value){
+  const e=weeklyState.entries.find(e=>e.id===id);
+  if(e){e[field]=value;saveWeeklyState();renderWeeklyPreview();}
+}
+function toggleMember(entryId,member){
+  const e=weeklyState.entries.find(e=>e.id===entryId);
+  if(!e)return;
+  const idx=e.participants.indexOf(member);
+  if(idx>=0)e.participants.splice(idx,1);else e.participants.push(member);
+  saveWeeklyState();
+  renderWeeklyEntryChips(entryId);
+  renderWeeklyPreview();
+}
+function renderWeeklyEntryChips(entryId){
+  const el=document.getElementById('chips_'+entryId);
+  if(!el)return;
+  const e=weeklyState.entries.find(e=>e.id===entryId);
+  if(!e)return;
+  el.innerHTML=presetMembers.map(m=>`<span class="chip ${e.participants.includes(m)?'selected':''}" onclick="toggleMember('${entryId}','${esc(m)}')">${esc(m)}</span>`).join('');
+}
+function renderWeekly(){
+  // week range label
+  const rangeEl=document.getElementById('weekRangeLabel');
+  if(rangeEl){
+    const r=formatWeekRange(weeklyState.weekStart);
+    rangeEl.textContent=r||'날짜를 선택하세요';
+  }
+  const wdi=document.getElementById('weekDateInput');
+  if(wdi&&weeklyState.weekStart&&!wdi.value)wdi.value=weeklyState.weekStart;
+
+  // entries
+  const wrap=document.getElementById('weeklyEntryList');
+  if(!wrap)return;
+  if(!weeklyState.entries.length){
+    wrap.innerHTML='<div class="empty">+ 프로젝트 추가를 눌러 업무를 입력하세요.</div>';
+  }else{
+    wrap.innerHTML=weeklyState.entries.map((e,i)=>`
+      <div class="weekly-entry-card">
+        <div class="we-head">
+          <div class="field" style="flex:1">
+            <label class="label">프로젝트명 (${i+1})</label>
+            <input list="presetProjectList" value="${esc(e.project)}" placeholder="프로젝트명을 선택하거나 입력하세요"
+              oninput="updateWeeklyEntry('${e.id}','project',this.value)" style="font-weight:700">
+          </div>
+          <button class="btn btn-danger btn-sm" style="margin-top:20px" onclick="removeWeeklyEntry('${e.id}')">×</button>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">참여자 선택</div>
+          <div class="chips-row" id="chips_${e.id}">
+            ${presetMembers.map(m=>`<span class="chip ${e.participants.includes(m)?'selected':''}" onclick="toggleMember('${e.id}','${esc(m)}')">${esc(m)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">업무 내용 <span style="font-weight:400;color:var(--muted)">(줄바꿈으로 항목 구분 / _ 없이 입력)</span></label>
+          <textarea style="min-height:110px" placeholder="예: 콘텐츠: 일정 조율&#10;제작: 후보 리스트 정리&#10;리포트: 데이터 취합 및 개선안 작성"
+            oninput="updateWeeklyEntry('${e.id}','tasks',this.value)">${esc(e.tasks)}</textarea>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // member management
+  renderMemberManage();
+  // records
+  renderWeeklyRecords();
+}
+function renderMemberManage(){
+  const el=document.getElementById('memberManageRow');
+  if(!el)return;
+  if(!presetMembers.length){el.innerHTML='<span class="small">팀원이 없습니다.</span>';return;}
+  el.innerHTML=presetMembers.map((m,i)=>`<span class="preset-tag removable" onclick="removePresetMember(${i})" title="클릭하여 삭제">${esc(m)}</span>`).join('');
+}
+function addPresetMember(){
+  const input=document.getElementById('newMemberInput');
+  const val=(input.value||'').trim();
+  if(!val){toast('이름을 입력하세요.');return;}
+  if(presetMembers.includes(val)){toast('이미 있는 팀원입니다.');return;}
+  presetMembers.push(val);
+  savePresetMembers();
+  renderWeekly();
+  input.value='';
+  toast('팀원이 추가되었습니다.');
+}
+function removePresetMember(i){
+  const name=presetMembers[i];
+  presetMembers.splice(i,1);
+  // remove from existing entries
+  weeklyState.entries.forEach(e=>{e.participants=e.participants.filter(p=>p!==name);});
+  savePresetMembers();
+  saveWeeklyState();
+  renderWeekly();
+  renderWeeklyPreview();
+  toast('팀원이 삭제되었습니다.');
+}
+function buildWeeklyText(){
+  const range=formatWeekRange(weeklyState.weekStart);
+  const lines=[];
+  lines.push(`[주차 업무보고] ${range||'(날짜를 선택하세요)'}`);
+  lines.push('');
+
+  const regular=weeklyState.entries.filter(e=>!String(e.project||'').includes('(제안)'));
+  const proposals=weeklyState.entries.filter(e=>String(e.project||'').includes('(제안)'));
+
+  // 일반 프로젝트: [프로젝트명 - 참여자1, 참여자2]\n_ 업무내용
+  regular.forEach(e=>{
+    const proj=(e.project||'').trim();
+    const plist=e.participants.length>0?' - '+e.participants.join(', '):'';
+    const taskLines=(e.tasks||'').split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!proj&&!taskLines.length)return;
+    lines.push(`[${proj||'(프로젝트명)'}${plist}]`);
+    taskLines.forEach(t=>{
+      lines.push(`_ ${t.replace(/^[_\-•\*]\s*/,'')}`);
+    });
+    lines.push('');
+  });
+
+  // 제안 프로젝트: [신규] 섹션으로 묶음
+  const propEntries=proposals.filter(e=>{
+    const proj=(e.project||'').trim();
+    const taskLines=(e.tasks||'').split('\n').map(l=>l.trim()).filter(Boolean);
+    return proj||taskLines.length;
+  });
+  if(propEntries.length){
+    lines.push('[신규]');
+    propEntries.forEach(e=>{
+      // "(제안)" 제거하고 표시
+      const proj=(e.project||'').replace(/\s*\(제안\)\s*/g,'').trim();
+      const taskLines=(e.tasks||'').split('\n').map(l=>l.trim()).filter(Boolean);
+      if(taskLines.length){
+        taskLines.forEach(t=>{
+          const clean=t.replace(/^[_\-•\*]\s*/,'');
+          lines.push(`_ ${proj}: ${clean}`);
+        });
+      }else{
+        lines.push(`_ ${proj}`);
+      }
+    });
+    lines.push('');
+  }
+
+  return lines.join('\n').trim();
+}
+function renderWeeklyPreview(){
+  const el=document.getElementById('weeklyPreview');
+  if(!el)return;
+  const text=buildWeeklyText();
+  el.textContent=text||'프로젝트를 추가하고 내용을 입력하세요.';
+  // update week range label
+  const rangeEl=document.getElementById('weekRangeLabel');
+  if(rangeEl){const r=formatWeekRange(weeklyState.weekStart);if(r)rangeEl.textContent=r;}
+}
+async function copyWeeklyText(){
+  const text=buildWeeklyText();
+  try{await navigator.clipboard.writeText(text);toast('주차 업무보고가 복사되었습니다.');}
+  catch(e){fallbackCopy(text);toast('텍스트가 복사되었습니다.');}
+}
+function saveWeeklyRecord(){
+  const rec={...deepCopy(weeklyState),savedAt:new Date().toISOString(),weekRange:formatWeekRange(weeklyState.weekStart)};
+  const key=weeklyState.weekStart;
+  if(!key){toast('날짜를 먼저 선택하세요.');return;}
+  const idx=weeklyRecords.findIndex(r=>r.weekStart===key);
+  if(idx>=0)weeklyRecords[idx]=rec;else weeklyRecords.push(rec);
+  saveWeeklyRecords();
+  renderWeeklyRecords();
+  toast('주차 업무보고가 저장되었습니다.');
+}
+function loadWeeklyRecord(weekStart){
+  const r=weeklyRecords.find(r=>r.weekStart===weekStart);
+  if(!r)return;
+  weeklyState=deepCopy(r);
+  delete weeklyState.savedAt;delete weeklyState.weekRange;
+  saveWeeklyState();
+  const wdi=document.getElementById('weekDateInput');
+  if(wdi)wdi.value=weeklyState.weekStart||'';
+  renderWeekly();
+  renderWeeklyPreview();
+  toast('불러왔습니다.');
+}
+function deleteWeeklyRecord(weekStart){
+  if(!confirm('삭제할까요?'))return;
+  weeklyRecords=weeklyRecords.filter(r=>r.weekStart!==weekStart);
+  saveWeeklyRecords();
+  renderWeeklyRecords();
+  toast('삭제되었습니다.');
+}
+function renderWeeklyRecords(){
+  const wrap=document.getElementById('weeklyRecordList');
+  if(!wrap)return;
+  if(!weeklyRecords.length){wrap.innerHTML='<div class="empty">저장된 주차 보고가 없습니다.</div>';return;}
+  const sorted=[...weeklyRecords].sort((a,b)=>a.weekStart<b.weekStart?1:-1).slice(0,10);
+  wrap.innerHTML=sorted.map(r=>`<div class="w-record-item">
+    <div><div class="record-title">${esc(r.weekRange||r.weekStart)}</div><div class="record-sub">프로젝트 ${r.entries?.length||0}건</div></div>
+    <div class="action-row"><button class="btn btn-light btn-sm" onclick="loadWeeklyRecord('${esc(r.weekStart)}')">불러오기</button><button class="btn btn-danger btn-sm" onclick="deleteWeeklyRecord('${esc(r.weekStart)}')">삭제</button></div>
+  </div>`).join('');
+}
+
+// ── Init ──────────────────────────────────────────────
+renderDatalist();
+renderAll();
+// 주차 날짜: 저장된 값이 없으면 가장 최근 업무일 금요일로 자동 세팅
+const _wdi=document.getElementById('weekDateInput');
+if(_wdi){
+  if(!weeklyState.weekStart){
+    weeklyState.weekStart=getLastBusinessFriday();
+    saveWeeklyState();
+  }
+  _wdi.value=weeklyState.weekStart;
+  // 초기 주차 범위 라벨 표시
+  const _rl=document.getElementById('weekRangeLabel');
+  if(_rl){const r=formatWeekRange(weeklyState.weekStart);if(r)_rl.textContent=r;}
+}
+</script>
+</body>
+</html>
