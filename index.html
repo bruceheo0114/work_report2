@@ -27,7 +27,7 @@ main{max-width:1280px;margin:0 auto;padding:18px 16px 80px}
 
 /* ── layout ── */
 .layout{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(430px,.96fr);gap:18px;align-items:start}
-.left,.right{display:flex;flex-direction:column;gap:14px}.right{position:sticky;top:76px}
+.left,.right{display:flex;flex-direction:column;gap:14px;min-width:0}.right{position:sticky;top:76px}
 .card{background:#fff;border-radius:16px;box-shadow:0 1px 8px rgba(26,39,68,.08);overflow:hidden;border:1px solid rgba(228,225,216,.8)}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:#fff;border-bottom:1px solid var(--line)}
 .card-title{font-size:15px;font-weight:900;letter-spacing:-.2px}.card-desc{font-size:12px;color:var(--muted);margin-top:3px}.card-body{padding:16px 18px}
@@ -110,7 +110,7 @@ input,select{height:38px;padding:0 10px;font-size:14px}textarea{padding:10px 12p
 .modal h3{font-size:16px;font-weight:900;margin-bottom:14px}
 .modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 
-@media(max-width:1060px){.layout{grid-template-columns:1fr}.right{position:static}.preview-box,.weekly-preview-box{max-height:none}}
+@media(max-width:1060px){.layout{grid-template-columns:minmax(0,1fr)}.right{position:static}.preview-box,.weekly-preview-box{max-height:none}}
 @media(max-width:820px){.task-foot{grid-template-columns:1fr}.project-row-mid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){main{padding:14px 10px 60px}.grid-2{grid-template-columns:1fr}.header-inner{align-items:flex-start;flex-direction:column}.project-row-mid{grid-template-columns:1fr}}
 </style>
