@@ -165,11 +165,13 @@ input,select{height:38px;padding:0 10px;font-size:14px}textarea{padding:10px 12p
             <div style="height:12px"></div>
             <div class="action-row">
               <span class="small">출근시간</span>
+              <button class="btn btn-navy" onclick="setWorkTemplate('08:30')">8시 30분 출근</button>
               <button class="btn btn-navy" onclick="setWorkTemplate('09:00')">9시 출근</button>
               <button class="btn btn-navy" onclick="setWorkTemplate('09:30')">9시 30분 출근</button>
               <button class="btn btn-navy" onclick="setWorkTemplate('10:00')">10시 출근</button>
               <span class="hint" id="workTimeHint"></span>
             </div>
+            <div class="hint" id="workHoursHint" role="status" aria-live="polite"></div>
             <div style="height:12px"></div>
             <div class="field">
               <label class="label">근무 형태</label>
@@ -606,6 +608,12 @@ function buildProjectLabel(index,name){return `[${name||'프로젝트 미지정'
 // ── Daily render ──────────────────────────────────────
 function renderAll(){migrateState();saveState();renderBase();renderProjects();renderEntries();renderTomorrow();renderRecords();renderPreview();}
 function renderBase(){
+  document.querySelectorAll('[onclick^="setWorkTemplate"]').forEach(button=>{
+    const selected=button.getAttribute('onclick')===`setWorkTemplate('${state.start}')`;
+    button.setAttribute('aria-pressed',String(selected));
+    button.style.outline=selected?'3px solid #f59e0b':'';
+    button.style.outlineOffset=selected?'2px':'';
+  });
   document.getElementById('dateInput').value=state.date||todayStr();
   document.getElementById('authorInput').value=state.author||'';
   const wt=document.getElementById('workTypeSelect');if(wt)wt.value=state.workType||'normal';
@@ -690,7 +698,7 @@ function renderRecords(){
 function countEntryCells(rec){return ['morning','afternoon','overtime'].reduce((n,p)=>n+((rec.entries?.[p]||[]).filter(e=>String(e.content||'').trim()).length),0);}
 
 // ── Daily actions ─────────────────────────────────────
-function setWorkTemplate(start){const endMap={'09:00':'18:00','09:30':'18:30','10:00':'19:00'};state.start=start;state.normalEnd=endMap[start]||'18:30';if(state.overtimeEnd&&timeToMin(state.overtimeEnd)<=timeToMin(effectiveWorkEnd(state)))state.overtimeEnd='';renderAll();toast(`${start} 출근 / ${state.normalEnd} 퇴근 기준으로 세팅되었습니다.`);}
+function setWorkTemplate(start){const endMap={'08:30':'17:30','09:00':'18:00','09:30':'18:30','10:00':'19:00'};if(!endMap[start])return;state.start=start;state.normalEnd=endMap[start];if(state.overtimeEnd&&timeToMin(state.overtimeEnd)<=timeToMin(effectiveWorkEnd(state)))state.overtimeEnd='';renderAll();toast(`${start} 출근 / ${state.normalEnd} 퇴근 기준으로 세팅되었습니다.`);}
 function addOvertime(){const v=document.getElementById('otEndInput')?.value||'20:00';if(state.workType==='annual'){toast('연차일에는 야근 업무를 추가할 수 없습니다.');return;}if(timeToMin(v)<=timeToMin(effectiveWorkEnd(state))){toast('야근 종료시간은 퇴근시간보다 늦어야 합니다.');return;}state.overtimeEnd=v;if(!state.entries.overtime.length)addEntry('overtime');else renderAll();toast(`${effectiveWorkEnd(state)}~${v} 야근 업무가 추가되었습니다.`);}
 function clearOvertime(){state.overtimeEnd='';state.entries.overtime=[];renderAll();toast('야근 업무가 해제되었습니다.');}
 function addProject(){const id=makeId();state.projects.push({id,name:'',daily:0,base:0});renderAll();}
@@ -756,7 +764,21 @@ function buildPlainText(){
   if(tm.length)lines.push(['명일 진행 업무',buildTomorrowContentText(tm),''].join('\t'));
   return lines.join('\n');
 }
-function renderPreview(){document.getElementById('preview').innerHTML=buildPreviewHtml();saveState();}
+function scheduledHours(src=state){
+  if(isAnnual(src))return 0;
+  let minutes=0;
+  if(periodVisible('morning',src))minutes+=Math.max(0,timeToMin('12:00')-timeToMin(effectiveMorningStart(src)));
+  if(periodVisible('afternoon',src))minutes+=Math.max(0,timeToMin(effectiveAfternoonEnd(src))-timeToMin('13:00'));
+  if(periodVisible('overtime',src))minutes+=Math.max(0,timeToMin(src.overtimeEnd)-timeToMin(effectiveWorkEnd(src)));
+  return minutes/60;
+}
+function renderHoursHint(){
+  const hint=document.getElementById('workHoursHint');
+  const expected=scheduledHours(), entered=totalDaily(), difference=Math.round((entered-expected)*100)/100;
+  hint.textContent=`시간표 기준 ${fmtH(expected)} (점심 제외·야근 포함) / 프로젝트 입력 ${fmtH(entered)}`+
+    (difference===0?' · 일치':` · ${fmtH(Math.abs(difference))} ${difference>0?'초과':'미배분'}`);
+}
+function renderPreview(){document.getElementById('preview').innerHTML=buildPreviewHtml();renderHoursHint();saveState();}
 
 // ── Import logic ──────────────────────────────────────
 function parseHoursCell(v){const m=String(v||'').match(/([\d.]+)\s*h/i);return m?parseFloat(m[1]):0;}
@@ -780,7 +802,7 @@ function parseReportText(raw,clearExisting){migrateState();const original=String
 function importReportText(clearExisting){const box=document.getElementById('importText');const raw=box?.value||'';const result=parseReportText(raw,clearExisting);renderAll();toast(`변환 완료: 업무 ${result.added}건 / 프로젝트 ${result.projects}개`);}
 
 // ── Daily record ──────────────────────────────────────
-function saveRecord(){const summary=projectSummary().map(p=>({id:p.id,name:p.name,base:p.base,dailyHours:p.dailyHours,monthHours:p.monthHours}));const rec={date:state.date,author:state.author,start:state.start,normalEnd:state.normalEnd,overtimeEnd:state.overtimeEnd,workType:state.workType,projects:summary,entries:deepCopy(state.entries),tomorrow:deepCopy(state.tomorrow),savedAt:new Date().toISOString()};const idx=records.findIndex(r=>r.date===state.date);if(idx>=0)records[idx]=rec;else records.push(rec);saveRecords();renderRecords();renderProjects();renderPreview();toast('오늘 기록이 저장되었습니다.');}
+function saveRecord(){if(!state.date){toast('날짜를 선택하세요.');return;}if(records.some(r=>r.date===state.date)&&!confirm(`${state.date}에 저장된 기록을 덮어쓸까요?`))return;const summary=projectSummary().map(p=>({id:p.id,name:p.name,base:p.base,dailyHours:p.dailyHours,monthHours:p.monthHours}));const rec={date:state.date,author:state.author,start:state.start,normalEnd:state.normalEnd,overtimeEnd:state.overtimeEnd,workType:state.workType,projects:summary,entries:deepCopy(state.entries),tomorrow:deepCopy(state.tomorrow),savedAt:new Date().toISOString()};const idx=records.findIndex(r=>r.date===state.date);if(idx>=0)records[idx]=rec;else records.push(rec);saveRecords();renderRecords();renderProjects();renderPreview();toast('오늘 기록이 저장되었습니다.');}
 function loadRecord(date){const r=records.find(r=>r.date===date);if(!r)return;const projects=(r.projects||[]).map(p=>({id:p.id||makeId(),name:p.name||'',daily:Number(p.dailyHours)||0,base:Number(p.base)||0}));state={date:r.date||todayStr(),author:r.author||'',start:r.start||'09:30',normalEnd:r.normalEnd||'18:30',overtimeEnd:r.overtimeEnd||'',workType:r.workType||'normal',projects,entries:deepCopy(r.entries||{morning:[],afternoon:[],overtime:[]}),tomorrow:deepCopy(r.tomorrow||[])};renderAll();toast('기록을 불러왔습니다.');}
 function deleteRecord(date){if(!confirm(`${date} 기록을 삭제할까요?`))return;records=records.filter(r=>r.date!==date);saveRecords();renderRecords();renderProjects();renderPreview();toast('기록이 삭제되었습니다.');}
 
